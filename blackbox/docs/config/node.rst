@@ -1,6 +1,6 @@
 .. highlight:: sh
 
-.. _conf-node-settings:
+.. _conf-node:
 
 ======================
 Node Specific Settings
@@ -11,16 +11,15 @@ Node Specific Settings
 .. contents::
    :local:
 
+.. _conf-node-basics:
+
 Basics
 ======
 
-.. _cluster.name:
+.. _conf-node-membership:
 
-**cluster.name**
-  | *Default:*    ``crate``
-  | *Runtime:*   ``no``
-
-  The name of the CrateDB cluster the node should join to.
+Cluster Membership
+------------------
 
 **node.name**
   | *Runtime:* ``no``
@@ -32,15 +31,18 @@ Basics
 
       Node names must be unique in a CrateDB cluster.
 
-**node.max_local_storage_nodes**
-  | *Default:*    ``1``
+.. _cluster.name:
+
+**cluster.name**
+  | *Default:*    ``crate``
   | *Runtime:*   ``no``
 
-  Defines how many nodes are allowed to be started on the same machine using
-  the same configured data path defined via `path.data`_.
+  The name of the CrateDB cluster the node should join to.
 
-Node Types
-==========
+.. _conf-node-type:
+
+Node Type
+---------
 
 CrateDB supports different kinds of nodes.
 
@@ -78,8 +80,45 @@ The four types of node possible are:
 Nodes marked as ``node.master`` will only handle cluster management loads if
 they are elected as the cluster master. All other loads are shared equally.
 
-Read-only node
-==============
+
+.. _conf-node-attrs:
+
+Custom Attributes
+-----------------
+
+The ``node.attr`` namespace is a bag of custom attributes.
+
+You can create any attribute you want under this namespace, like
+``node.attr.key: value``. These attributes use the ``node.attr`` namespace to
+distinguish them from core node attribute like ``node.name``.
+
+Custom attributes are not validated by CrateDB, unlike core node attributes.
+
+Custom attributes can, however, be :ref:`used to control shard allocation
+<conf-routing-allocation-awareness>`.
+
+.. _conf-node-license:
+
+License
+-------
+
+**license.enterprise**
+  | *Default:*  ``true``
+  | *Runtime:*  ``no``
+
+  Setting this to ``false`` disables the `Enterprise Edition`_ of CrateDB.
+
+.. _`Enterprise Edition`: https://crate.io/enterprise-edition/
+
+.. _conf-node-functionality:
+
+Functionality
+=============
+
+.. _conf-node-ro:
+
+Read-Only Mode
+--------------
 
 **node.sql.read_only**
   | *Default:* ``false``
@@ -88,10 +127,243 @@ Read-only node
   If set to ``true``, the node will only allow SQL statements which are
   resulting in read operations.
 
-.. _conf_hosts:
+.. _conf-node-query-limits:
+
+Query Limits
+------------
+
+.. _conf-indices-query-bool.max_clause_count:
+
+**indices.query.bool.max_clause_count**
+  | *Default:* ``8192``
+  | *Runtime:* ``no``
+
+  This setting defines the maximum number of elements an array can have so
+  that the ``!= ANY()``, ``LIKE ANY()`` and the ``NOT LIKE ANY()`` operators
+  can be applied on it.
+
+  .. NOTE::
+
+    Increasing this value to a large number (e.g. 10M) and applying  those
+    ``ANY`` operators on arrays of that length can lead to heavy memory,
+    consumption which could cause nodes to crash with OutOfMemory exceptions.
+
+.. _conf-node-languages:
+
+Procedural Languages
+--------------------
+
+.. _conf-node-lang-js:
+
+JavaScript
+..........
+
+**lang.js.enabled**
+  | *Default:*  ``false``
+  | *Runtime:*  ``no``
+
+  Setting to enable the Javascript language. As The Javascript language is an
+  experimental feature and is not securely sandboxed its disabled by default.
+
+  .. NOTE::
+
+      This is an :ref:`enterprise feature <enterprise_features>`.
+
+.. _conf-node-plugins:
+
+Plugins
+-------
+
+**plugin.mandatory**
+  | *Runtime:* ``no``
+
+  A list of plugins that are required for a node to startup.
+
+  If any plugin listed here is missing, the CrateDB node will fail to start.
+
+.. _conf-node-es-api:
+
+Elasticsearch HTTP API
+----------------------
+
+**es.api.enabled**
+  | *Default:* ``false``
+  | *Runtime:* ``no``
+
+  Enable or disable elasticsearch HTTP API.
+
+  .. WARNING::
+
+    This setting is deprecated and will be removed in the future.
+
+    Manipulating your data via elasticsearch API and not via SQL might result
+    in inconsistent data. You have been warned!
+
+.. _conf-node-system:
+
+System Setup
+============
+
+.. _conf-node-fs:
+
+File System
+-----------
+
+**path.conf**
+  | *Runtime:* ``no``
+
+  Filesystem path to the directory containing the configuration files
+  ``crate.yml`` and ``log4j2.properties``.
+
+.. _path.data:
+
+**path.data**
+  | *Runtime:* ``no``
+
+  Filesystem path to the directory where this CrateDB node stores its data
+  (table data and cluster metadata).
+
+  Multiple paths can be set by using a comma separated list and each of these
+  paths will hold full shards (instead of striping data across them). In case
+  CrateDB finds striped shards at the provided locations (from CrateDB
+  <0.55.0), these shards will be migrated automatically on startup.
+
+**path.logs**
+  | *Runtime:* ``no``
+
+  Filesystem path to a directory where log files should be stored.
+
+  Can be used as a variable inside ``log4j2.properties``.
+
+  For example:
+
+  .. code-block::
+     yaml
+
+     appender:
+       file:
+         file: ${path.logs}/${cluster.name}.log
+
+.. _conf-path-repo:
+
+**path.repo**
+  | *Runtime:* ``no``
+
+  A list of filesystem or UNC paths where repositories of type
+  :ref:`ref-create-repository-types-fs` may be stored.
+
+  Without this setting a CrateDB user could write snapshot files to any
+  directory that is writable by the CrateDB process. To safeguard against this
+  security issue, the possible paths have to be whitelisted here.
+
+  See also :ref:`location <ref-create-repository-types-fs-location>` setting of
+  repository type ``fs``.
+
+**blobs.path**
+  | *Runtime:* ``no``
+
+  Path to a filesystem directory where to store blob data allocated for this
+  node.
+
+  By default blobs will be stored under the same path as normal data. A
+  relative path value is interpreted as relative to ``CRATE_HOME``.
+
+.. _conf-node-mem:
+
+CPU
+===
+
+**processors**
+  | *Runtime:* ``no``
+
+  The number of available processes is automatically guessed, and so most of
+  the time you will not need to configure this explicitly.
+
+  However, in some situations, such as when CrateDB is being run on top of
+  Docker, the number of processors may be guessed incorrectly. If this happens,
+  you can manually configure the number of processors using this setting.
+
+  You can also use this setting to manually constrain the number of CPUs made
+  available to CrateDB. You might want to do this if you're running CrateDB in
+  a multitenant setup (i.e. more than one CrateDB node running on the same
+  hardware).
+
+Memory
+------
+
+.. _conf-node-mem-lock:
+
+Memory Lock
+...........
+
+**bootstrap.memory_lock**
+  | *Runtime:* ``no``
+  | *Default:* ``false``
+
+  CrateDB performs poorly when the JVM starts swapping: you should ensure that
+  it *never* swaps. If set to ``true``, CrateDB will use the ``mlockall``
+  system call on startup to ensure that the memory pages of the CrateDB process
+  are locked into RAM.
+
+.. _conf-node-gc:
+
+Garbage Collection
+..................
+
+CrateDB logs if JVM garbage collection on different memory pools takes too
+long. The following settings can be used to adjust these timeouts:
+
+**monitor.jvm.gc.collector.young.warn**
+  | *Default:* ``1000ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log a warning message if it takes more than the configured
+  timespan to collect the *Eden Space* (heap).
+
+**monitor.jvm.gc.collector.young.info**
+  | *Default:* ``700ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log an info message if it takes more than the configured
+  timespan to collect the *Eden Space* (heap).
+
+**monitor.jvm.gc.collector.young.debug**
+  | *Default:* ``400ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log a debug message if it takes more than the configured
+  timespan to collect the *Eden Space* (heap).
+
+**monitor.jvm.gc.collector.old.warn**
+  | *Default:* ``10000ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log a warning message if it takes more than the configured
+  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
+
+**monitor.jvm.gc.collector.old.info**
+  | *Default:* ``5000ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log an info message if it takes more than the configured
+  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
+
+**monitor.jvm.gc.collector.old.debug**
+  | *Default:* ``2000ms``
+  | *Runtime:* ``no``
+
+  CrateDB will log a debug message if it takes more than the configured
+  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
+
+.. _conf-node-network:
+
+Network
+-------
+
+.. _conf-node-hosts:
 
 Hosts
-=====
+.....
 
 .. _network.host:
 
@@ -135,10 +407,10 @@ Hosts
                                ``_en0_``.
     =========================  =================================================
 
-.. _conf_ports:
+.. _conf-node-ports:
 
 Ports
-=====
+.....
 
 .. _http.port:
 
@@ -195,158 +467,36 @@ Ports
   range is used. If this is set to an integer value it is considered as an
   explicit single port.
 
-Paths
-=====
+.. _conf-node-multi:
 
-**path.conf**
-  | *Runtime:* ``no``
+Multitenancy
+------------
 
-  Filesystem path to the directory containing the configuration files
-  ``crate.yml`` and ``log4j2.properties``.
+**node.max_local_storage_nodes**
+  | *Default:*    ``1``
+  | *Runtime:*   ``no``
 
-.. _path.data:
+  Defines how many nodes are allowed to be started on the same machine using
+  the same configured data path defined via `path.data`_.
 
-**path.data**
-  | *Runtime:* ``no``
+.. _conf-node-security:
 
-  Filesystem path to the directory where this CrateDB node stores its data
-  (table data and cluster metadata).
+Security
+========
 
-  Multiple paths can be set by using a comma separated list and each of these
-  paths will hold full shards (instead of striping data across them). In case
-  CrateDB finds striped shards at the provided locations (from CrateDB
-  <0.55.0), these shards will be migrated automatically on startup.
-
-**path.logs**
-  | *Runtime:* ``no``
-
-  Filesystem path to a directory where log files should be stored.
-
-  Can be used as a variable inside ``log4j2.properties``.
-
-  For example:
-
-  .. code-block::
-     yaml
-
-     appender:
-       file:
-         file: ${path.logs}/${cluster.name}.log
-
-.. _conf-path-repo:
-
-**path.repo**
-  | *Runtime:* ``no``
-
-  A list of filesystem or UNC paths where repositories of type
-  :ref:`ref-create-repository-types-fs` may be stored.
-
-  Without this setting a CrateDB user could write snapshot files to any
-  directory that is writable by the CrateDB process. To safeguard against this
-  security issue, the possible paths have to be whitelisted here.
-
-  See also :ref:`location <ref-create-repository-types-fs-location>` setting of
-  repository type ``fs``.
-
-Plugins
-=======
-
-**plugin.mandatory**
-  | *Runtime:* ``no``
-
-  A list of plugins that are required for a node to startup.
-
-  If any plugin listed here is missing, the CrateDB node will fail to start.
-
-CPU
-===
-
-**processors**
-  | *Runtime:* ``no``
-
-  The number of available processes is automatically guessed, and so most of
-  the time you will not need to configure this explicitly.
-
-  However, in some situations, such as when CrateDB is being run on top of
-  Docker, the number of processors may be guessed incorrectly. If this happens,
-  you can manually configure the number of processors using this setting.
-
-  You can also use this setting to manually constrain the number of CPUs made
-  available to CrateDB. You might want to do this if you're running CrateDB in
-  a multitenant setup (i.e. more than one CrateDB node running on the same
-  hardware).
-
-Memory
-======
-
-**bootstrap.memory_lock**
-  | *Runtime:* ``no``
-  | *Default:* ``false``
-
-  CrateDB performs poorly when the JVM starts swapping: you should ensure that
-  it *never* swaps. If set to ``true``, CrateDB will use the ``mlockall``
-  system call on startup to ensure that the memory pages of the CrateDB process
-  are locked into RAM.
-
-Garbage Collection
-==================
-
-CrateDB logs if JVM garbage collection on different memory pools takes too
-long. The following settings can be used to adjust these timeouts:
-
-**monitor.jvm.gc.collector.young.warn**
-  | *Default:* ``1000ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log a warning message if it takes more than the configured
-  timespan to collect the *Eden Space* (heap).
-
-**monitor.jvm.gc.collector.young.info**
-  | *Default:* ``700ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log an info message if it takes more than the configured
-  timespan to collect the *Eden Space* (heap).
-
-**monitor.jvm.gc.collector.young.debug**
-  | *Default:* ``400ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log a debug message if it takes more than the configured
-  timespan to collect the *Eden Space* (heap).
-
-**monitor.jvm.gc.collector.old.warn**
-  | *Default:* ``10000ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log a warning message if it takes more than the configured
-  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
-
-**monitor.jvm.gc.collector.old.info**
-  | *Default:* ``5000ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log an info message if it takes more than the configured
-  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
-
-**monitor.jvm.gc.collector.old.debug**
-  | *Default:* ``2000ms``
-  | *Runtime:* ``no``
-
-  CrateDB will log a debug message if it takes more than the configured
-  timespan to collect the *Old Gen* / *Tenured Gen* (heap).
+.. _conf-node-auth:
 
 Authentication
-==============
+--------------
 
 .. NOTE::
 
     Authentication is an :ref:`enterprise feature <enterprise_features>`.
 
-.. _host_based_auth:
+.. _conf-node-auth-trust:
 
 Trust Authentication
---------------------
+....................
 
 **auth.trust.http_default_user**
   | *Runtime:* ``no``
@@ -356,8 +506,10 @@ Trust Authentication
   to CrateDB via HTTP protocol and they do not specify a user via the
   ``Authorization`` request header.
 
+.. _conf-node-auth-host:
+
 Host Based Authentication
--------------------------
+.........................
 
 Authentication settings (``auth.host_based.*``) are node settings, which means
 that their values apply only to the node where they are applied and different
@@ -370,8 +522,10 @@ nodes may have different authentication settings.
   Setting to enable or disable Host Based Authentication (HBA). It is disabled
   by default.
 
+.. _conf-node-auth-host-entries:
+
 HBA Entries
-...........
+```````````
 
 The ``auth.host_based.config.`` setting is a group setting that can have zero,
 one or multiple groups that are defined by their group key (``${order}``) and
@@ -456,11 +610,10 @@ The meaning of the fields of the are as follows:
         protocol: pg
         ssl: on
 
+.. _conf-node-ssl:
 
-.. _ssl_config:
-
-Secured Communications (SSL/TLS)
-================================
+Transport Layer Security (SSL/TLS)
+----------------------------------
 
 Secured communications via SSL allows you to encrypt traffic between CrateDB
 nodes and clients connecting to them. Connections are secured using Transport
@@ -526,26 +679,10 @@ Layer Security (TLS).
   The password used to decrypt the truststore file defined with
   ``ssl.truststore_filepath``.
 
-.. _es_api_setting:
-
-Elasticsearch HTTP REST API
-===========================
-
-**es.api.enabled**
-  | *Default:* ``false``
-  | *Runtime:* ``no``
-
-  Enable or disable elasticsearch HTTP REST API.
-
-  .. WARNING::
-
-    This setting is deprecated and will be removed in the future.
-
-    Manipulating your data via elasticsearch API and not via SQL might result
-    in inconsistent data. You have been warned!
+.. _conf-node-cors:
 
 Cross-Origin Resource Sharing (CORS)
-====================================
+------------------------------------
 
 Many browsers support the `same-origin policy`_ which requires web applications
 to explicitly allow requests across origins. The `cross-origin resource
@@ -594,22 +731,15 @@ sharing`_ settings in CrateDB allow for configuring these.
 .. _`same-origin policy`: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 .. _`cross-origin resource sharing`: https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS
 
-Blobs
-=====
+.. _conf-node-snapshots:
 
-**blobs.path**
-  | *Runtime:* ``no``
+Snapshots
+=========
 
-  Path to a filesystem directory where to store blob data allocated for this
-  node.
-
-  By default blobs will be stored under the same path as normal data. A
-  relative path value is interpreted as relative to ``CRATE_HOME``.
-
-.. _ref-configuration-repositories:
+.. _conf-node-snapshot-repos:
 
 Repositories
-============
+------------
 
 Repositories are used to :ref:`backup <snapshot-restore>` a CrateDB cluster.
 
@@ -646,66 +776,3 @@ See also the :ref:`path.repo <conf-path-repo>` Setting.
 
 .. _`JarURLConnection documentation`: http://docs.oracle.com/javase/8/docs/api/java/net/JarURLConnection.html
 
-Queries
-=======
-
-.. _conf-indices-query-bool.max_clause_count:
-
-**indices.query.bool.max_clause_count**
-  | *Default:* ``8192``
-  | *Runtime:* ``no``
-
-  This setting defines the maximum number of elements an array can have so
-  that the ``!= ANY()``, ``LIKE ANY()`` and the ``NOT LIKE ANY()`` operators
-  can be applied on it.
-
-  .. NOTE::
-
-    Increasing this value to a large number (e.g. 10M) and applying  those
-    ``ANY`` operators on arrays of that length can lead to heavy memory,
-    consumption which could cause nodes to crash with OutOfMemory exceptions.
-
-.. _conf-node-lang-js:
-
-Javascript Language
-===================
-
-**lang.js.enabled**
-  | *Default:*  ``false``
-  | *Runtime:*  ``no``
-
-  Setting to enable the Javascript language. As The Javascript language is an
-  experimental feature and is not securely sandboxed its disabled by default.
-
-  .. NOTE::
-
-      This is an :ref:`enterprise feature <enterprise_features>`.
-
-.. _conf-node-attributes:
-
-Custom Attributes
-=================
-
-The ``node.attr`` namespace is a bag of custom attributes.
-
-You can create any attribute you want under this namespace, like
-``node.attr.key: value``. These attributes use the ``node.attr`` namespace to
-distinguish them from core node attribute like ``node.name``.
-
-Custom attributes are not validated by CrateDB, unlike core node attributes.
-
-Custom attributes can, however, be :ref:`used to control shard allocation
-<conf-routing-allocation-awareness>`.
-
-.. _conf-node-enterprise-license:
-
-Enterprise License
-==================
-
-**license.enterprise**
-  | *Default:*  ``true``
-  | *Runtime:*  ``no``
-
-  Setting this to ``false`` disables the `Enterprise Edition`_ of CrateDB.
-
-.. _`Enterprise Edition`: https://crate.io/enterprise-edition/
