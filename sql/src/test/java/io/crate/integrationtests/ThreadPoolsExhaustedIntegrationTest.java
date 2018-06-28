@@ -21,6 +21,7 @@
 
 package io.crate.integrationtests;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import io.crate.testing.SQLBulkResponse;
 import io.crate.testing.SQLResponse;
 import io.crate.testing.SQLTransportExecutor;
@@ -67,6 +68,16 @@ public class ThreadPoolsExhaustedIntegrationTest extends SQLTransportIntegration
 
         // by setting a very high limit we force a push based collection instead of a direct response
         assertRejectedExecutionFailure("select * from t limit ?", new Object[]{1_000_000});
+    }
+
+    @Test
+    @Repeat (iterations = 500)
+    public void testGroupByWithFewAvailableThreadsShouldNeverGetStuck() {
+        execute("create table t (x int) with (number_of_replicas = 0)");
+        ensureYellow();
+        bulkInsert(10);
+
+        assertRejectedExecutionFailure("select x, count(*) from t group by x", new Object[0]);
     }
 
     private void assertRejectedExecutionFailure(String stmt, Object[] parameters) {
