@@ -102,13 +102,13 @@ public final class IntGroupingCollector implements Collector<Row, IntObjectHashM
             expression.setNextRow(row);
         }
         int key = keyInput.getInt();
-        if (statesByKey.containsKey(key)) {
-            Object[] states = statesByKey.get(key);
+        Object[] states = statesByKey.get(key);
+        if (states == null) {
+            addNewEntry(statesByKey, key);
+        } else {
             for (int i = 0; i < aggregations.length; i++) {
                 states[i] = mode.onRow(ramAccounting, aggregations[i], states[i], inputs[i]);
             }
-        } else {
-            addNewEntry(statesByKey, key);
         }
     }
 
