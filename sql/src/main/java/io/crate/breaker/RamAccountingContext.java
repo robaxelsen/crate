@@ -65,7 +65,7 @@ public class RamAccountingContext implements RamAccounting {
      */
     @Override
     public void addBytes(long bytes) throws CircuitBreakingException {
-        addBytes(bytes, true);
+        //addBytes(bytes, true);
     }
 
     /**
@@ -74,7 +74,7 @@ public class RamAccountingContext implements RamAccounting {
      * @param bytes bytes to be added
      */
     public void addBytesWithoutBreaking(long bytes) {
-        addBytes(bytes, false);
+        //addBytes(bytes, false);
     }
 
     private void addBytes(long bytes, boolean shouldBreak) throws CircuitBreakingException {
