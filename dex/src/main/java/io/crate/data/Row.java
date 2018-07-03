@@ -67,6 +67,10 @@ public interface Row {
      */
     Object get(int index);
 
+    default int getInt(int index) {
+        return (int) get(index);
+    }
+
     /**
      * Returns a materialized view of this row.
      */

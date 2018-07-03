@@ -25,4 +25,8 @@ package io.crate.data;
 public interface Input<T> {
 
     T value();
+
+    default int getInt() {
+        return ((Number) value()).intValue();
+    }
 }
