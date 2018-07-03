@@ -26,7 +26,7 @@ import io.crate.data.Row;
 public class InputCollectExpression implements CollectExpression<Row, Object> {
 
     private final int position;
-    private Object value;
+    private Row row;
 
     public InputCollectExpression(int position) {
         this.position = position;
@@ -35,12 +35,17 @@ public class InputCollectExpression implements CollectExpression<Row, Object> {
     @Override
     public void setNextRow(Row row) {
         assert row.numColumns() > position : "row smaller than input position " + row.numColumns() + "<=" + position;
-        value = row.get(position);
+        this.row = row;
     }
 
     @Override
     public Object value() {
-        return value;
+        return row.get(position);
+    }
+
+    @Override
+    public int getInt() {
+        return row.getInt(position);
     }
 
     @Override
@@ -51,15 +56,13 @@ public class InputCollectExpression implements CollectExpression<Row, Object> {
         InputCollectExpression that = (InputCollectExpression) o;
 
         if (position != that.position) return false;
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
-
-        return true;
+        return row != null ? row.equals(that.row) : that.row == null;
     }
 
     @Override
     public int hashCode() {
         int result = position;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (row != null ? row.hashCode() : 0);
         return result;
     }
 

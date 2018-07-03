@@ -48,6 +48,11 @@ public class InputRow implements Row {
     }
 
     @Override
+    public int getInt(int index) {
+        return inputs.get(index).getInt();
+    }
+
+    @Override
     public Object[] materialize() {
         return Buckets.materialize(this);
     }

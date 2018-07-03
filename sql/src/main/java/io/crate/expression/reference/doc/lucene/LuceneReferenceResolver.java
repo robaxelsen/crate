@@ -135,7 +135,7 @@ public class LuceneReferenceResolver implements ReferenceResolver<LuceneCollecto
             case TimestampType.ID:
                 return new LongColumnReference(fqn);
             case IntegerType.ID:
-                return new IntegerColumnReference(fqn);
+                return ref.isNullable() ? new IntegerColumnReference(fqn) : new NonNullInt(fqn);
             case GeoPointType.ID:
                 return new GeoPointColumnReference(fqn, fieldType);
             case ArrayType.ID:
