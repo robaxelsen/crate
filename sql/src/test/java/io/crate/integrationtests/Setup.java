@@ -145,7 +145,7 @@ public class Setup {
                                                              " name string," +
                                                              " details object as (job string)," +
                                                              " details_ignored object(ignored)" +
-                                                             ")", numericType));
+                                                             ") clustered into 1 shards with (number_of_replicas = 0)", numericType));
         transportExecutor.ensureYellowOrGreen();
 
         Map<String, String> details = newHashMap();
