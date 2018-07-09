@@ -1,46 +1,70 @@
 .. highlight:: sh
 
-.. _conf-cluster-settings:
+.. _conf-cluster:
 
-=====================
-Cluster Wide Settings
-=====================
+================
+Cluster Settings
+================
 
-All current applied cluster settings can be read by querying the
-:ref:`sys.cluster.settings <sys-cluster-settings>` column. Most
-cluster settings can be :ref:`changed at runtime
-<administration-runtime-config>`. This is documented at each setting.
+This document lists settings that can be applied to a CrateDB cluster.
+
+All cluster settings can be configured at startup, using :ref:`the usual
+configuration methods <config>`. Additionally, some settings can be
+:ref:`configured at runtime <admin-runtime-config>`.
+
+Each setting specifies a default value and the availability of runtime
+configuration.
+
+All cluster settings can be :ref:`queried at runtime <sys-cluster-settings>`.
+
+.. SEEALSO::
+
+    :ref:`Node settings <conf-node>` are applied to individual nodes.
+
+.. CAUTION::
+
+   Cluster settings :ref:`configured at startup <config>` must be configured
+   identically on every node.
+
+   If cluster settings are configured differently at startup on different nodes, the CrateDB cluster may behave unpredictably.
 
 .. rubric:: Table of Contents
 
 .. contents::
    :local:
 
-.. _applying-cluster-settings:
+Basics
+======
 
-Non-Runtime Cluster Wide Settings
----------------------------------
+.. _conf-node-basics-license:
 
-Cluster wide settings which cannot be changed at runtime need to be specified
-in the configuration of each node in the cluster.
+License
+-------
 
-.. CAUTION::
+.. _license.enterprise:
 
-   Cluster settings specified via node configurations are required to be
-   exactly the same on every node in the cluster for proper operation of the
-   cluster.
+``license.enterprise``: (default: ``true``; runtime: no)
+  Setting this to ``false`` disables the `Enterprise Edition`_ of CrateDB.
+
+.. _conf_usage_data_collector:
+
+Update Interval
+---------------
+
+.. _cluster.info.update.interval:
+
+``cluster.info.update.interval`` : (default: ``30s``; runtime: yes)
+  Defines how often the cluster collect metadata information (e.g. disk usages
+  etc.) if no concrete  event is triggered.
 
 .. _conf_collecting_stats:
 
-Collecting Stats
-----------------
+Statistics
+----------
 
 .. _stats.enabled:
 
-**stats.enabled**
-  | *Default:*    ``true``
-  | *Runtime:*   ``yes``
-
+``stats.enabled`` : (default: ``true``; runtime: yes)
   A boolean indicating whether or not to collect statistical information about
   the cluster.
 
@@ -52,10 +76,7 @@ Collecting Stats
 
 .. _stats.jobs_log_size:
 
-**stats.jobs_log_size**
-  | *Default:*   ``10000``
-  | *Runtime:*  ``yes``
-
+``stats.jobs_log_size`` : (default: ``10000``; runtime: yes)
   The maximum number of job records kept to be kept in the :ref:`sys.jobs_log
   <sys-logs>` table on each node.
 
@@ -70,10 +91,7 @@ Collecting Stats
 
 .. _stats.jobs_log_expiration:
 
-**stats.jobs_log_expiration**
-  | *Default:*  ``0s`` (disabled)
-  | *Runtime:*  ``yes``
-
+``stats.jobs_log_expiration`` : (default: ``0s``; runtime: yes)
   The job record expiry time in seconds.
 
   Job records in the :ref:`sys.jobs_log <sys-logs>` table are periodically
@@ -91,14 +109,13 @@ Collecting Stats
 
 .. _stats.jobs_log_filter:
 
-**stats.jobs_log_filter**
-  | *Default:* ``true`` (Include everything)
-  | *Runtime:* ``yes``
-
+``stats.jobs_log_filter`` : (default: ``true``; runtime: yes)
   An expression to determine if a job should be recorded into ``sys.jobs_log``.
   The expression must evaluate to a boolean. If it evaluates to ``true`` the
   statement will show up ``sys.jobs_log`` until it's evicted due to one of the
   other rules. (expiration or size limit reached).
+
+  If set to ``true`` (the default), everything is included.
 
   The expression may reference all columns contained in ``sys.jobs_log``. A
   common use case is to include only jobs that took a certain amount of time to
@@ -108,13 +125,12 @@ Collecting Stats
 
 .. _stats.jobs_log_persistent_filter:
 
-**stats.jobs_log_persistent_filter**
-  | *Default:* ``false`` (Include nothing)
-  | *Runtime:* ``yes``
-
+``stats.jobs_log_persistent_filter`` : (default: ``false``; runtime: yes)
   An expression to determine if a job should also be recorded to the regular
   ``CrateDB`` log. Entries that match this filter will be logged under the
   ``StatementLog`` logger with the ``INFO`` level.
+
+  If set to ``false`` (the default), nothing is included.
 
   This is similar to ``stats.jobs_log_filter`` except that these entries are
   persisted to the log file. This should be used with caution and shouldn't be
@@ -125,10 +141,7 @@ Collecting Stats
 
 .. _stats.operations_log_size:
 
-**stats.operations_log_size**
-  | *Default:*   ``10000``
-  | *Runtime:*  ``yes``
-
+``stats.operations_log_size`` : (default: ``10000``; runtime: yes)
   The maximum number of operations records to be kept in the
   :ref:`sys.operations_log <sys-logs>` table on each node.
 
@@ -143,10 +156,7 @@ Collecting Stats
 
 .. _stats.operations_log_expiration:
 
-**stats.operations_log_expiration**
-  | *Default:*  ``0s`` (disabled)
-  | *Runtime:*  ``yes``
-
+``stats.operations_log_expiration`` : (default: ``0s``; runtime: yes)
   Entries of :ref:`sys.operations_log <sys-logs>` are cleared by a periodically
   job when they are older than the specified expire time. This setting
   overrides :ref:`stats.operations_log_size <stats.operations_log_size>`. If
@@ -161,10 +171,7 @@ Collecting Stats
 
 .. _stats.service.interval:
 
-**stats.service.interval**
-  | *Default:*    ``1h``
-  | *Runtime:*   ``yes``
-
+``stats.service.interval`` : (default: ``1h``; runtime: yes)
   Defines the refresh interval to refresh tables statistics used to produce
   optimal query execution plans.
 
@@ -178,8 +185,6 @@ Collecting Stats
 
     Using a very small value can cause a high load on the cluster.
 
-.. _conf_usage_data_collector:
-
 Usage Data Collector
 --------------------
 
@@ -189,20 +194,14 @@ about its usage.
 
 .. _udc_enabled:
 
-**udc.enabled**
-  | *Default:*  ``true``
-  | *Runtime:*  ``no``
-
+``udc.enabled`` : (default: ``true``; runtime: no)
   ``true``: Enables the Usage Data Collector.
 
   ``false``: Disables the Usage Data Collector.
 
 .. _cluster.udc.initial_delay:
 
-**udc.initial_delay**
-  | *Default:*  ``10m``
-  | *Runtime:*  ``no``
-
+``udc.initial_delay`` : (default: ``10m``; runtime: no)
   The delay for first ping after start-up.
 
   This field expects a time value either as a long or double or alternatively
@@ -211,10 +210,7 @@ about its usage.
 
 .. _cluster.udc.interval:
 
-**udc.interval**
-  | *Default:*  ``24h``
-  | *Runtime:*  ``no``
-
+``udc.interval`` : (default: ``24h``; runtime: no)
   The interval a UDC ping is sent.
 
   This field expects a time value either as a long or double or alternatively
@@ -223,105 +219,68 @@ about its usage.
 
 .. _cluster.udc.url:
 
-**udc.url**
-  | *Default:*  ``https://udc.crate.io``
-  | *Runtime:*  ``no``
-
+``udc.url`` : (default: ``https://udc.crate.io``; runtime: no)
   The URL the ping is sent to.
 
-.. _conf_graceful_stop:
+Features
+========
 
-Graceful Stop
--------------
+Procedural Languages
+--------------------
 
-By default, when the CrateDB process stops it simply shuts down, possibly
-making some shards unavailable which leads to a *red* cluster state and lets
-some queries fail that required the now unavailable shards. In order to
-*safely* shutdown a CrateDB node, the graceful stop procedure can be used.
+.. _conf-node-lang-js:
 
-The following cluster settings can be used to change the shutdown behaviour of
-nodes of the cluster:
+JavaScript
+..........
 
-.. _cluster.graceful_stop.min_availability:
+.. _lang.js.enabled:
 
-**cluster.graceful_stop.min_availability**
-  | *Default:*   ``primaries``
-  | *Runtime:*  ``yes``
-  | *Allowed Values:*   ``none | primaries | full``
-
-  ``none``: No minimum data availability is required. The node may shut down
-  even if records are missing after shutdown.
-
-  ``primaries``: At least all primary shards need to be available after the node
-  has shut down. Replicas may be missing.
-
-  ``full``: All records and all replicas need to be available after the node
-  has shut down. Data availability is full.
+``lang.js.enabled``: (default: ``false``; runtime: no)
+  Setting to enable the Javascript language. As The Javascript language is an
+  experimental feature and is not securely sandboxed its disabled by default.
 
   .. NOTE::
 
-     This option is ignored if there is only 1 node in a cluster!
+      This is an :ref:`enterprise feature <enterprise_features>`.
 
-.. _cluster.graceful_stop.reallocate:
+Cluster Setup
+=============
 
-**cluster.graceful_stop.reallocate**
-  | *Default:*   ``true``
-  | *Runtime:*  ``yes``
+.. _metadata_gateway:
 
-  ``true``: The ``graceful stop`` command allows shards to be reallocated
-  before shutting down the node in order to ensure minimum data availability
-  set with ``min_availability``.
+Metadata Gateway
+----------------
 
-  ``false``: The ``graceful stop`` command will fail if the cluster would need
-  to reallocate shards in order to ensure the minimum data availability set
-  with ``min_availability``.
+  The gateway persists cluster meta data on disk every time the meta data
+  changes. This data is stored persistently across full cluster restarts and
+  recovered after nodes are started again.
 
-  .. WARNING::
+.. _gateway.expected_nodes:
 
-     Make sure you have enough nodes and enough disk space for the
-     reallocation.
+``gateway.expected_nodes`` : (default: ``-1``; runtime: no)
+  The setting ``gateway.expected_nodes`` defines the number of nodes that
+  should be waited for until the cluster state is recovered immediately. The
+  value of the setting should be equal to the number of nodes in the cluster,
+  because you only want the cluster state to be recovered after all nodes are
+  started.
 
-.. _cluster.graceful_stop.timeout:
+.. _gateway.recover_after_time:
 
-**cluster.graceful_stop.timeout**
-  | *Default:*   ``2h``
-  | *Runtime:*  ``yes``
+``gateway.recover_after_time`` : (default: ``0ms``; runtime: no)
+  The ``gateway.recover_after_time`` setting defines the time to wait before
+  starting starting the recovery once the number of nodes defined in
+  ``gateway.recover_after_nodes`` are started. The setting is relevant if
+  ``gateway.recover_after_nodes`` is less than ``gateway.expected_nodes``.
 
-  Defines the maximum waiting time in milliseconds for the reallocation process
-  to finish. The ``force`` setting will define the behaviour when the shutdown
-  process runs into this timeout.
+.. _gateway.recover_after_nodes:
 
-  The timeout expects a time value either as a long or double or alternatively
-  as a string literal with a time suffix (``ms``, ``s``, ``m``, ``h``, ``d``,
-  ``w``).
-
-.. _cluster.graceful_stop.force:
-
-**cluster.graceful_stop.force**
-  | *Default:*   ``false``
-  | *Runtime:*  ``yes``
-
-  Defines whether ``graceful stop`` should force stopping of the node if it
-  runs into the timeout which is specified with the
-  `cluster.graceful_stop.timeout`_ setting.
-
-.. _conf_bulk_operations:
-
-Bulk Operations
----------------
-
-SQL DML Statements involving a huge amount of rows like :ref:`copy_from`,
-:ref:`ref-insert` or :ref:`ref-update` can take an enormous amount of time and
-resources. The following settings change the behaviour of those queries.
-
-.. _bulk.request_timeout:
-
-**bulk.request_timeout**
-  | *Default:* ``1m``
-  | *Runtime:* ``yes``
-
-  Defines the timeout of internal shard-based requests involved in the
-  execution of SQL DML Statements over a huge amount of rows.
+``gateway.recover_after_nodes`` : (default: ``-1``; runtime: no)
+  The ``gateway.recover_after_nodes`` setting defines the number of nodes that
+  need to be started before the cluster state recovery will start. Ideally the
+  value of the setting should be equal to the number of nodes in the cluster,
+  because you only want the cluster state to be recovered once all nodes are
+  started. However, the value must be bigger than the half of the expected
+  number of nodes in the cluster.
 
 .. _conf_discovery:
 
@@ -330,30 +289,21 @@ Discovery
 
 .. _discovery.zen.minimum_master_nodes:
 
-**discovery.zen.minimum_master_nodes**
-  | *Default:*   ``1``
-  | *Runtime:*  ``yes``
-
+``discovery.zen.minimum_master_nodes`` : (default: ``1``; runtime: yes)
   Set to ensure a node sees N other master eligible nodes to be considered
   operational within the cluster. It's recommended to set it to a higher value
   than 1 when running more than 2 nodes in the cluster.
 
 .. _discovery.zen.ping_timeout:
 
-**discovery.zen.ping_timeout**
-  | *Default:*   ``3s``
-  | *Runtime:*  ``yes``
-
+``discovery.zen.ping_timeout`` : (default: ``3s``; runtime: yes)
   Set the time to wait for ping responses from other nodes when discovering.
   Set this option to a higher value on a slow or congested network to minimize
   discovery failures.
 
 .. _discovery.zen.publish_timeout:
 
-**discovery.zen.publish_timeout**
-  | *Default:*   ``30s``
-  | *Runtime:*  ``yes``
-
+``discovery.zen.publish_timeout`` : (default: ``30s``; runtime: yes)
   Time a node is waiting for responses from other nodes to a published cluster
   state.
 
@@ -371,9 +321,8 @@ CrateDB has built-in support for several different mechanisms of node
 discovery. The simplest mechanism is to specify a list of hosts in the
 configuration file.
 
-**discovery.zen.ping.unicast.hosts**
-  | *Default:*  ``not set``
-  | *Runtime:*  ``no``
+``discovery.zen.ping.unicast.hosts`` : (default: none; runtime: no)
+  TODO
 
 Currently there are three other discovery types: via DNS, via EC2 API and via
 Microsoft Azure mechanisms.
@@ -386,10 +335,8 @@ unicast hosts for node discovery.
 The same lookup is also performed by all nodes in a cluster whenever the master
 is re-elected (see `Cluster Meta Data`).
 
-**discovery.zen.hosts_provider**
-  | *Default:*   ``not set``
-  | *Runtime:*   ``no``
-  | *Allowed Values:* ``srv``, ``ec2``, ``azure``
+``discovery.zen.hosts_provider`` : (default: none; runtime: no)
+  Allowed Values:* ``srv``, ``ec2``, ``azure``
 
 See also: `Discovery`_.
 
@@ -412,16 +359,12 @@ would result in a list of discovery nodes ordered like::
 
     crate2.example.com:4300, crate3.example.com:4300, crate1.example.com:4300
 
-**discovery.srv.query**
-  | *Runtime:*  ``no``
-
+``discovery.srv.query`` : (default: none; runtime: no)
   The DNS query that is used to look up SRV records, usually in the format
   ``_service._protocol.fqdn`` If not set, the service discovery will not be
   able to look up any SRV records.
 
-**discovery.srv.resolver**
-  | *Runtime:*  ``no``
-
+``discovery.srv.resolver`` : (default: system; runtime: no)
   The hostname or IP of the DNS server used to resolve DNS records. If this is
   not set, or the specified hostname/IP is not resolvable, the default (system)
   resolver is used.
@@ -437,64 +380,47 @@ CrateDB has built-in support for discovery via the EC2 API. To enable EC2
 discovery the ``discovery.zen.hosts_provider`` settings needs to be set to
 ``ec2``.
 
-**discovery.ec2.access_key**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.access_key`` : (default: none; runtime: no)
   The access key ID to identify the API calls.
 
-**discovery.ec2.secret_key**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.secret_key`` : (default; none; runtime: no)
   The secret key to identify the API calls.
 
 Following settings control the discovery:
 
 .. _discovery_ec2_groups:
 
-**discovery.ec2.groups**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.groups`` : (default: none; runtime: no)
   A list of security groups; either by ID or name. Only instances with the
   given group will be used for unicast host discovery.
 
-**discovery.ec2.any_group**
-  | *Runtime:*  ``no``
-  | *Default:*  ``true``
-
+``discovery.ec2.any_group`` : (default: ``true``; runtime: no)
   Defines whether all (``false``) or just any (``true``) security group must
   be present for the instance to be used for discovery.
 
 .. _discovery_ec2_host_type:
 
-**discovery.ec2.host_type**
-  | *Runtime:*  ``no``
-  | *Default:*  ``private_ip``
-  | *Allowed Values:*  ``private_ip``, ``public_ip``, ``private_dns``, ``public_dns``
+``discovery.ec2.host_type`` : (default: ``private_ip``; runtime: no)
+  *Allowed Values:*  ``private_ip``, ``public_ip``, ``private_dns``, ``public_dns``
 
   Defines via which host type to communicate with other instances.
 
 .. _discovery_ec2_zones:
 
-**discovery.ec2.availability_zones**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.availability_zones`` : (default: none; runtime: no)
   A list of availability zones. Only instances within the given availability
   zone will be used for unicast host discovery.
 
 .. _discovery_ec2_tags:
 
-**discovery.ec2.tag.<name>**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.tag.<name>`` : (default: none; runtime: no)
   EC2 instances for discovery can also be filtered by tags using the
   ``discovery.ec2.tag.`` prefix plus the tag name.
 
   E.g. to filter instances that have the ``environment`` tags with the value
   ``dev`` your setting will look like: ``discovery.ec2.tag.environment: dev``.
 
-**discovery.ec2.endpoint**
-  | *Runtime:*  ``no``
-
+``discovery.ec2.endpoint`` : (default: none; runtime: no)
   If you have your own compatible implementation of the EC2 API service you can
   set the endpoint that should be used.
 
@@ -507,39 +433,27 @@ CrateDB has built-in support for discovery via the Azure Virtual Machine API.
 To enable Azure discovery set the ``discovery.zen.hosts_provider`` setting to
 ``azure``.
 
-**cloud.azure.management.resourcegroup.name**
-  | *Runtime:*  ``no``
-
+``cloud.azure.management.resourcegroup.name`` : (default: none; runtime: no)
   The name of the resource group the CrateDB cluster is running on.
 
   All nodes need to be started within the same resource group.
 
-**cloud.azure.management.subscription.id**
-  | *Runtime:*  ``no``
-
+``cloud.azure.management.subscription.id`` : (default: none; runtime: no)
   The subscription ID of your Azure account.
 
   You can find the ID on the `Azure Portal`_.
 
-**cloud.azure.management.tenant.id**
-  | *Runtime:*  ``no``
-
+``cloud.azure.management.tenant.id`` : (default: none; runtime: no)
   The tenant ID of the `Active Directory application`_.
 
-**cloud.azure.management.app.id**
-  | *Runtime:*  ``no``
-
+``cloud.azure.management.app.id`` : (default: none; runtime: no)
   The application ID of the `Active Directory application`_.
 
-**cloud.azure.management.app.secret**
-  | *Runtime:*  ``no``
-
+``cloud.azure.management.app.secret`` : (default: none; runtime: no)
   The password of the `Active Directory application`_.
 
-**discovery.azure.method**
-  | *Runtime:* ``no``
-  | *Default:* ``vnet``
-  | *Allowed Values:* ``vnet | subnet``
+``discovery.azure.method`` : (default: ``vnet``; runtime: no)
+  *Allowed Values:* ``vnet | subnet``
 
   Defines the scope of the discovery. ``vnet`` will discover all VMs within the
   same virtual network (default), ``subnet`` will discover all VMs within the
@@ -548,6 +462,9 @@ To enable Azure discovery set the ``discovery.zen.hosts_provider`` setting to
 .. _`Azure Portal`: https://portal.azure.com
 .. _`Active Directory application`: https://azure.microsoft.com/en-us/documentation/articles/resource-group-authenticate-service-principal-cli/#_create-ad-application-with-password
 
+Data Management
+===============
+
 .. _conf_routing:
 
 Routing Allocation
@@ -555,10 +472,8 @@ Routing Allocation
 
 .. _cluster.routing.allocation.enable:
 
-**cluster.routing.allocation.enable**
-  | *Default:*   ``all``
-  | *Runtime:*  ``yes``
-  | *Allowed Values:* ``all | none | primaries | new_primaries``
+``cluster.routing.allocation.enable`` : (default: ``all``; runtime: yes)
+  *Allowed Values:* ``all | none | primaries | new_primaries``
 
   ``all`` allows all shard allocations, the cluster can allocate all kinds of
   shards.
@@ -584,10 +499,8 @@ Routing Allocation
 
 .. _cluster.routing.rebalance.enable:
 
-**cluster.routing.rebalance.enable**
-  | *Default:*   ``all``
-  | *Runtime:*  ``yes``
-  | *Allowed Values:* ``all | none | primaries | replicas``
+``cluster.routing.rebalance.enable`` : (default: ``all``; runtime: yes)
+  *Allowed Values:* ``all | none | primaries | replicas``
 
   Enables/Disables rebalancing for different types of shards.
 
@@ -601,10 +514,8 @@ Routing Allocation
 
 .. _cluster.routing.allocation.allow_rebalance:
 
-**cluster.routing.allocation.allow_rebalance**
-  | *Default:*   ``indices_all_active``
-  | *Runtime:*  ``yes``
-  | *Allowed Values:* ``always | indices_primary_active | indices_all_active``
+``cluster.routing.allocation.allow_rebalance`` : (default: ``indices_all_active``; runtime: yes)
+  *Allowed Values:* ``always | indices_primary_active | indices_all_active``
 
   Allow to control when rebalancing will happen based on the total state of all
   the indices shards in the cluster. Defaulting to ``indices_all_active`` to
@@ -612,28 +523,19 @@ Routing Allocation
 
 .. _cluster.routing.allocation.cluster_concurrent_rebalance:
 
-**cluster.routing.allocation.cluster_concurrent_rebalance**
-  | *Default:*   ``2``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.cluster_concurrent_rebalance`` : (default: ``2``; runtime: yes)
   Define how many concurrent rebalancing tasks are allowed cluster wide.
 
 .. _cluster.routing.allocation.node_initial_primaries_recoveries:
 
-**cluster.routing.allocation.node_initial_primaries_recoveries**
-  | *Default:*   ``4``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.node_initial_primaries_recoveries`` : (default: ``4``; runtime: yes)
   Define the number of initial recoveries of primaries that are allowed per
   node. Since most times local gateway is used, those should be fast and we can
   handle more of those per node without creating load.
 
 .. _cluster.routing.allocation.node_concurrent_recoveries:
 
-**cluster.routing.allocation.node_concurrent_recoveries**
-  | *Default:*   ``2``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.node_concurrent_recoveries`` : (default: ``2``; runtime: yes)
   How many concurrent recoveries are allowed to happen on a node.
 
 .. _conf-routing-allocation-awareness:
@@ -646,9 +548,7 @@ across generic attributes associated with nodes.
 
 .. _cluster.routing.allocation.awareness.attributes:
 
-**cluster.routing.allocation.awareness.attributes**
-  | *Runtime:*  ``no``
-
+``cluster.routing.allocation.awareness.attributes`` : (default: none; runtime: no)
   Define node attributes which will be used to do awareness based on the
   allocation of a shard and its replicas. For example, let's say we have
   defined an attribute ``rack_id`` and we start 2 nodes with
@@ -664,9 +564,7 @@ across generic attributes associated with nodes.
 
 .. _cluster.routing.allocation.awareness.force.*.values:
 
-**cluster.routing.allocation.awareness.force.\*.values**
-  | *Runtime:*  ``no``
-
+``cluster.routing.allocation.awareness.force.\*.values`` : (default: none; runtime: no)
   Attributes on which shard allocation will be forced. ``*`` is a placeholder
   for the awareness attribute, which can be defined using the
   `cluster.routing.allocation.awareness.attributes`_ setting. Let's say we
@@ -687,30 +585,21 @@ to forced awareness or allocation filtering.
 
 .. _cluster.routing.allocation.balance.shard:
 
-**cluster.routing.allocation.balance.shard**
-  | *Default:*   ``0.45f``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.balance.shard`` : (default: ``0.45f``; runtime: yes)
   Defines the weight factor for shards allocated on a node (float). Raising
   this raises the tendency to equalize the number of shards across all nodes in
   the cluster.
 
 .. _cluster.routing.allocation.balance.index:
 
-**cluster.routing.allocation.balance.index**
-  | *Default:*   ``0.55f``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.balance.index`` : (default: ``0.55f``; runtime: yes)
   Defines a factor to the number of shards per index allocated on a specific
   node (float). Increasing this value raises the tendency to equalize the
   number of shards per index across all nodes in the cluster.
 
 .. _cluster.routing.allocation.balance.threshold:
 
-**cluster.routing.allocation.balance.threshold**
-  | *Default:*   ``1.0f``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.balance.threshold`` : (default: ``1.0f``; runtime: yes)
   Minimal optimization value of operations that should be performed (non
   negative float). Increasing this value will cause the cluster to be less
   aggressive about optimising the shard balance.
@@ -725,25 +614,19 @@ specific IP addresses or custom attributes.
 
 .. _cluster.routing.allocation.include.*:
 
-**cluster.routing.allocation.include.***
-  | *Runtime:*  ``no``
-
+``cluster.routing.allocation.include.*`` : (default: none; runtime: no)
   Place new shards only on nodes where one of the specified values matches the
   attribute. e.g.: cluster.routing.allocation.include.zone: "zone1,zone2"
 
 .. _cluster.routing.allocation.exclude.*:
 
-**cluster.routing.allocation.exclude.***
-  | *Runtime:*  ``no``
-
+``cluster.routing.allocation.exclude.*`` : (default: none; runtime: no)
   Place new shards only on nodes where none of the specified values matches the
   attribute. e.g.: cluster.routing.allocation.exclude.zone: "zone1"
 
 .. _cluster.routing.allocation.require.*:
 
-**cluster.routing.allocation.require.***
-  | *Runtime:*  ``no``
-
+``cluster.routing.allocation.require.*`` : (default: none; runtime: no)
   Used to specify a number of rules, which all MUST match for a node in order
   to allocate a shard on it. This is in contrast to include which will include
   a node if ANY rule matches.
@@ -753,18 +636,12 @@ Disk-based Shard Allocation
 
 .. _cluster.routing.allocation.disk.threshold_enabled:
 
-**cluster.routing.allocation.disk.threshold_enabled**
-  | *Default:*   ``true``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.disk.threshold_enabled`` : (default: ``true``; runtime: yes)
   Prevent shard allocation on nodes depending of the disk usage.
 
 .. _cluster.routing.allocation.disk.watermark.low:
 
-**cluster.routing.allocation.disk.watermark.low**
-  | *Default:*   ``85%``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.disk.watermark.low`` : (default: ``85%``; runtime: yes)
   Defines the lower disk threshold limit for shard allocations. New shards will
   not be allocated on nodes with disk usage greater than this value. It can
   also be set to an absolute bytes value (like e.g. ``500mb``) to prevent the
@@ -773,10 +650,7 @@ Disk-based Shard Allocation
 
 .. _cluster.routing.allocation.disk.watermark.high:
 
-**cluster.routing.allocation.disk.watermark.high**
-  | *Default:*   ``90%``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.disk.watermark.high`` : (default: ``90%``; runtime: yes)
   Defines the higher disk threshold limit for shard allocations. The cluster
   will attempt to relocate existing shards to another node if the disk usage on
   a node rises above this value. It can also be set to an absolute bytes value
@@ -785,10 +659,7 @@ Disk-based Shard Allocation
 
 .. _cluster.routing.allocation.disk.watermark.flood_stage:
 
-**cluster.routing.allocation.disk.watermark.flood_stage**
-  | *Default:*  ``95%``
-  | *Runtime:*  ``yes``
-
+``cluster.routing.allocation.disk.watermark.flood_stage`` : (default: ``95%``; runtime: yes)
   Defines the threshold on which CrateDB enforces a read-only block on every
   index that has at least one shard allocated on a node with at least one disk
   exceeding the flood stage.
@@ -810,10 +681,7 @@ Recovery
 
 .. _indices.recovery.max_bytes_per_sec:
 
-**indices.recovery.max_bytes_per_sec**
-  | *Default:*   ``40mb``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.max_bytes_per_sec`` : (default: ``40mb``; runtime: yes)
   Specifies the maximum number of bytes that can be transferred during shard
   recovery per seconds. Limiting can be disabled by setting it to ``0``. This
   setting allows to control the network usage of the recovery process. Higher
@@ -822,118 +690,187 @@ Recovery
 
 .. _indices.recovery.retry_delay_state_sync:
 
-**indices.recovery.retry_delay_state_sync**
-  | *Default:*  ``500ms``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.retry_delay_state_sync`` : (default: ``500ms``; runtime: yes)
   Defines the time to wait after an issue caused by cluster state syncing
   before retrying to recover.
 
 .. _indices.recovery.retry_delay_network:
 
-**indices.recovery.retry_delay_network**
-  | *Default:*  ``5s``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.retry_delay_network`` : (default: ``5s``; runtime: yes)
   Defines the time to wait after an issue caused by the network before retrying
   to recover.
 
 .. _indices.recovery.internal_action_timeout:
 
-**indices.recovery.internal_action_timeout**
-  | *Default:*  ``15m``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.internal_action_timeout`` : (default: ``15m``; runtime: yes)
   Defines the timeout for internal requests made as part of the recovery.
 
 .. _indices.recovery.internal_action_long_timeout:
 
-**indices.recovery.internal_action_long_timeout**
-  | *Default:*  ``30m``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.internal_action_long_timeout`` : (default: ``30m``; runtime: yes)
   Defines the timeout for internal requests made as part of the recovery that
   are expected to take a long time. Defaults to twice
   :ref:`internal_action_timeout <indices.recovery.internal_action_timeout>`.
 
 .. _indices.recovery.recovery_activity_timeout:
 
-**indices.recovery.recovery_activity_timeout**
-  | *Default:*  ``30m``
-  | *Runtime:*  ``yes``
-
+``indices.recovery.recovery_activity_timeout`` : (default: ``30m``; runtime: yes)
   Recoveries that don't show any activity for more then this interval will
   fail. Defaults to :ref:`internal_action_long_timeout
   <indices.recovery.internal_action_long_timeout>`.
 
+Graceful Stop
+-------------
+
+By default, when the CrateDB process stops it simply shuts down, possibly
+making some shards unavailable which leads to a *red* cluster state and lets
+some queries fail that required the now unavailable shards. In order to
+*safely* shutdown a CrateDB node, the graceful stop procedure can be used.
+
+The following cluster settings can be used to change the shutdown behaviour of
+nodes of the cluster:
+
+.. _cluster.graceful_stop.min_availability:
+
+``cluster.graceful_stop.min_availability`` : (default: ``primaries``; runtime: yes)
+  *Allowed Values:*   ``none | primaries | full``
+
+  ``none``: No minimum data availability is required. The node may shut down
+  even if records are missing after shutdown.
+
+  ``primaries``: At least all primary shards need to be available after the node
+  has shut down. Replicas may be missing.
+
+  ``full``: All records and all replicas need to be available after the node
+  has shut down. Data availability is full.
+
+  .. NOTE::
+
+     This option is ignored if there is only 1 node in a cluster!
+
+.. _cluster.graceful_stop.reallocate:
+
+``cluster.graceful_stop.reallocate`` : (default: ``true``; runtime: yes)
+  ``true``: The ``graceful stop`` command allows shards to be reallocated
+  before shutting down the node in order to ensure minimum data availability
+  set with ``min_availability``.
+
+  ``false``: The ``graceful stop`` command will fail if the cluster would need
+  to reallocate shards in order to ensure the minimum data availability set
+  with ``min_availability``.
+
+  .. WARNING::
+
+     Make sure you have enough nodes and enough disk space for the
+     reallocation.
+
+.. _cluster.graceful_stop.timeout:
+
+``cluster.graceful_stop.timeout`` : (default: ``2h``; runtime: yes)
+  Defines the maximum waiting time in milliseconds for the reallocation process
+  to finish. The ``force`` setting will define the behaviour when the shutdown
+  process runs into this timeout.
+
+  The timeout expects a time value either as a long or double or alternatively
+  as a string literal with a time suffix (``ms``, ``s``, ``m``, ``h``, ``d``,
+  ``w``).
+
+.. _cluster.graceful_stop.force:
+
+``cluster.graceful_stop.force`` : (default: ``false``; runtime: yes)
+  Defines whether ``graceful stop`` should force stopping of the node if it
+  runs into the timeout which is specified with the
+  `cluster.graceful_stop.timeout`_ setting.
+
+Resource Limits
+===============
+
+.. _conf-node-func-query-limits:
+
+Query Limits
+------------
+
+.. _indices.query.bool.max_clause_count:
+
+``indices.query.bool.max_clause_count`` : (default: ``8192``; runtime: no)
+  This setting defines the maximum number of elements an array can have so
+  that the ``!= ANY()``, ``LIKE ANY()`` and the ``NOT LIKE ANY()`` operators
+  can be applied on it.
+
+  .. NOTE::
+
+    Increasing this value to a large number (e.g. 10M) and applying  those
+    ``ANY`` operators on arrays of that length can lead to heavy memory,
+    consumption which could cause nodes to crash with OutOfMemory exceptions.
+
+.. _conf_bulk_operations:
+
+Bulk Operations
+---------------
+
+SQL DML Statements involving a huge amount of rows like :ref:`copy_from`,
+:ref:`ref-insert` or :ref:`ref-update` can take an enormous amount of time and
+resources. The following settings change the behaviour of those queries.
+
+.. _bulk.request_timeout:
+
+``bulk.request_timeout`` : (default: ``1m``; runtime: yes)
+  Defines the timeout of internal shard-based requests involved in the
+  execution of SQL DML Statements over a huge amount of rows.
+
+Circuit Breakers
+----------------
+
 Query Circuit Breaker
----------------------
+.....................
 
 The Query circuit breaker will keep track of the used memory during the
 execution of a query. If a query consumes too much memory or if the cluster is
 already near its memory limit it will terminate the query to ensure the cluster
 keeps working.
 
-**indices.breaker.query.limit**
-  | *Default:*   ``60%``
-  | *Runtime:*   ``yes``
-
+``indices.breaker.query.limit`` : (default: ``60%``; runtime: yes)
   Specifies the limit for the query breaker. Provided values can either be
   absolute values (interpreted as a number of bytes), byte sizes (eg. 1mb) or
   percentage of the heap size (eg. 12%). A value of ``-1`` disables breaking
   the circuit while still accounting memory usage.
 
-**indices.breaker.query.overhead**
-  | *Default:*   ``1.09``
-  | *Runtime:*   ``no``
-
+``indices.breaker.query.overhead`` : (default: ``1.09``; runtime: no)
   A constant that all data estimations are multiplied with to determine a final
   estimation.
 
 Field Data Circuit Breaker
---------------------------
+..........................
 
 The field data circuit breaker allows estimation of needed heap memory required
 for loading field data into memory. If a certain limit is reached an exception
 is raised.
 
-**indices.breaker.fielddata.limit**
-  | *Default:*   ``60%``
-  | *Runtime:*  ``yes``
-
+``indices.breaker.fielddata.limit`` : (default: ``60%``; runtime: yes)
   Specifies the JVM heap limit for the fielddata breaker.
 
-**indices.breaker.fielddata.overhead**
-  | *Default:*   ``1.03``
-  | *Runtime:*  ``yes``
-
+``indices.breaker.fielddata.overhead`` : (default: ``1.03``; runtime: yes)
   A constant that all field data estimations are multiplied with to determine a
   final estimation.
 
 Request Circuit Breaker
------------------------
+.......................
 
 The request circuit breaker allows an estimation of required heap memory per
 request. If a single request exceeds the specified amount of memory, an
 exception is raised.
 
-**indices.breaker.request.limit**
-  | *Default:*   ``60%``
-  | *Runtime:*  ``yes``
-
+``indices.breaker.request.limit`` : (default: ``60%``; runtime: yes)
   Specifies the JVM heap limit for the request circuit breaker.
 
-**indices.breaker.request.overhead**
-  | *Default:*   ``1.0``
-  | *Runtime:*  ``yes``
-
+``indices.breaker.request.overhead`` : (default: ``1.0``; runtime: yes)
   A constant that all request estimations are multiplied with to determine a
   final estimation.
 
 .. _stats.breaker.log:
 
 Stats Circuit Breakers
-----------------------
+......................
 
 Settings that control the behaviour of the stats circuit breaker. There are two
 breakers in place, one for the jobs log and one for the operations log. For
@@ -941,10 +878,7 @@ each of them, the breaker limit can be set.
 
 .. _stats.breaker.log.jobs.limit:
 
-**stats.breaker.log.jobs.limit**
-  | *Default:*    ``5%``
-  | *Runtime:*   ``yes``
-
+``stats.breaker.log.jobs.limit`` : (default: ``5%``; runtime: yes)
   The maximum memory that can be used from :ref:`CRATE_HEAP_SIZE
   <conf-env-heap-size>` for the :ref:`sys.jobs_log <sys-logs>` table on each
   node.
@@ -954,10 +888,7 @@ each of them, the breaker limit can be set.
 
 .. _stats.breaker.log.operations.limit:
 
-**stats.breaker.log.operations.limit**
-  | *Default:*    ``5%``
-  | *Runtime:*   ``yes``
-
+``stats.breaker.log.operations.limit`` : (default: ``5%``; runtime: yes)
   The maximum memory that can be used from :ref:`CRATE_HEAP_SIZE
   <conf-env-heap-size>` for the :ref:`sys.operations_log <sys-logs>` table on
   each node.
@@ -970,134 +901,93 @@ Thread Pools
 ------------
 
 Every node holds several thread pools to improve how threads are managed within
-a node. There are several pools, but the important ones include:
+a node.
 
-* ``index``: For index/delete operations, defaults to fixed
-* ``search``: For count/search operations, defaults to fixed
-* ``get``: For queries that are optimized to do a direct lookup by primary key,
-  defaults to fixed
-* ``bulk``: For bulk operations, defaults to fixed
-* ``refresh``: For refresh operations, defaults to cache
+Allowed Values: ``fixed | scaling``
 
-**thread_pool.<name>.type**
-  | *Runtime:*  ``no``
-  | *Allowed Values:* ``fixed | scaling``
+``fixed`` holds a fixed size of threads to handle the requests. It also has a
+queue for pending requests if no threads are available.
 
-  ``fixed`` holds a fixed size of threads to handle the requests. It also has a
-  queue for pending requests if no threads are available.
-
-  ``scaling`` ensures that a thread pool holds a dynamic number of threads that
-  are proportional to the workload.
-
-Settings for fixed thread pools
-...............................
+``scaling`` ensures that a thread pool holds a dynamic number of threads that
+are proportional to the workload.
 
 If the type of a thread pool is set to ``fixed`` there are a few optional
 settings.
 
-**thread_pool.<name>.size**
-  | *Runtime:*  ``no``
+Index
+.....
 
+For index/delete operations.
+
+``thread_pool.index.type`` : (default: ``fixed``; runtime: no)
+
+``thread_pool.index.size`` : (default: varies; runtime: no)
   Number of threads. The default size of the different thread pools depend on
   the number of available CPU cores.
 
-**thread_pool.<name>.queue_size**
-  | *Default index:*  ``200``
-  | *Default search:* ``1000``
-  | *Default get:* ``1000``
-  | *Default bulk:* ``50``
-  | *Runtime:*  ``no``
-
+``thread_pool.index.queue_size`` : (default: ``200``; runtime: no)
   Size of the queue for pending requests. A value of ``-1`` sets it to
   unbounded.
 
-Metadata
---------
+Search
+......
 
-.. _cluster.info.update.interval:
+For count/search operations
 
-**cluster.info.update.interval**
-  | *Default:*  ``30s``
-  | *Runtime:*  ``yes``
+``thread_pool.search.type`` : (default: ``fixed``; runtime: no)
 
-  Defines how often the cluster collect metadata information (e.g. disk usages
-  etc.) if no concrete  event is triggered.
+``thread_pool.search.size`` : (default: varies; runtime: no)
+  Number of threads. The default size of the different thread pools depend on
+  the number of available CPU cores.
 
-.. _metadata_gateway:
+``thread_pool.search.queue_size`` : (default: ``1000``; runtime: no)
+  Size of the queue for pending requests. A value of ``-1`` sets it to
+  unbounded.
 
-Metadata Gateway
-................
+Get
+...
 
-  The gateway persists cluster meta data on disk every time the meta data
-  changes. This data is stored persistently across full cluster restarts and
-  recovered after nodes are started again.
+For queries that are optimized to do a direct lookup by primary key.
 
-.. _gateway.expected_nodes:
+``thread_pool.get.type`` : (default: ``fixed``; runtime: no)
 
-**gateway.expected_nodes**
-  | *Default:*   ``-1``
-  | *Runtime:*  ``no``
+``thread_pool.get.size`` : (default: varies; runtime: no)
+  Number of threads. The default size of the different thread pools depend on
+  the number of available CPU cores.
 
-  The setting ``gateway.expected_nodes`` defines the number of nodes that
-  should be waited for until the cluster state is recovered immediately. The
-  value of the setting should be equal to the number of nodes in the cluster,
-  because you only want the cluster state to be recovered after all nodes are
-  started.
+``thread_pool.get.queue_size`` : (default: ``1000``; runtime: no)
+  Size of the queue for pending requests. A value of ``-1`` sets it to
+  unbounded.
 
-.. _gateway.recover_after_time:
+Bulk
+....
 
-**gateway.recover_after_time**
-  | *Default:*   ``0ms``
-  | *Runtime:*  ``no``
+For bulk operations
 
-  The ``gateway.recover_after_time`` setting defines the time to wait before
-  starting starting the recovery once the number of nodes defined in
-  ``gateway.recover_after_nodes`` are started. The setting is relevant if
-  ``gateway.recover_after_nodes`` is less than ``gateway.expected_nodes``.
+``thread_pool.bulk.type`` : (default: ``fixed``; runtime: no)
 
-.. _gateway.recover_after_nodes:
+``thread_pool.bulk.size`` : (default: varies; runtime: no)
+  Number of threads. The default size of the different thread pools depend on
+  the number of available CPU cores.
 
-**gateway.recover_after_nodes**
-  | *Default:*   ``-1``
-  | *Runtime:*  ``no``
+``thread_pool.bulk.queue_size`` : (default: ``50``; runtime: no)
+  Size of the queue for pending requests. A value of ``-1`` sets it to
+  unbounded.
 
-  The ``gateway.recover_after_nodes`` setting defines the number of nodes that
-  need to be started before the cluster state recovery will start. Ideally the
-  value of the setting should be equal to the number of nodes in the cluster,
-  because you only want the cluster state to be recovered once all nodes are
-  started. However, the value must be bigger than the half of the expected
-  number of nodes in the cluster.
+Refresh
+.......
 
-.. _s3-credentials:
+For refresh operations
 
-Credentials for S3 Repositories
-...............................
+``thread_pool.refresh.type`` : (default: ``cache``; runtime: no)
+  cache??
 
-CrateDB has built-in support for configuring
-:ref:`S3 buckets as repositories for snapshots
-<ref-create-repository-types-s3>`. If no credentials are provided as parameters
-to the SQL statement the following default credentials will be used:
+``thread_pool.refresh.size`` : (default: varies; runtime: no)
+  Number of threads. The default size of the different thread pools depend on
+  the number of available CPU cores.
 
-.. _s3-credentials-access-key:
+``thread_pool.refresh.queue_size`` : (default: ???; runtime: no)
+  DEFAULT??
 
-**s3.client.default.access_key**
-  | *Runtime:*  ``no``
-
-  The access key ID to identify the API calls.
-
-.. _s3-credentials-secret-key:
-
-**s3.client.default.secret_key**
-  | *Runtime:*  ``no``
-
-  The secret key to identify the API calls.
-
-
-.. TIP::
-
-   Configuring the settings above in the ``crate.yml`` file, is an easy way to
-   prevent credentials from being exposed.
-
-   If a repository is created with the credentials passed as parameters to the
-   SQL statement, then those credentials will be visible as plain text to
-   anyone querying the :ref:`sys.repositories table <sys-repositories>`.
+  Size of the queue for pending requests. A value of ``-1`` sets it to
+  unbounded.
